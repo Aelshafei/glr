@@ -5,7 +5,7 @@ Python script to search   log files from one or more application servers based o
 ## Features
 - Processing log files from several application servers of the same web environment using SSH or just one local server
 - Send reports by Emails
-- Eligible to fetch application logs based on custom LogLevel pattrerns
+- Eligible to fetch application logs based on custom LogLevel patterns
 - No need to install custom Python modules
 - Support legacy Python versions (Python 2.4)
 - Easy Configuration
