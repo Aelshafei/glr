@@ -67,10 +67,7 @@ SHELL_CMD_TEMPLATE = '''#!/bin/bash
 
 '''
 
-EMAIL_HTML_TEMPLATE = '''From: __FROM_EMAIL
-To: __TO_EMAILS
-Subject: __SUBJECT
-Content-Type: text/html
+EMAIL_HTML_TEMPLATE = '''
 
 
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
@@ -91,6 +88,9 @@ Content-Type: text/html
 			<tr>	
 				<td style="text-align:left;display:inline;width:33%"><h3 style="font-weight: normal;display:inline"><b>Start Date : </b> __START_DATE </h3></td>
 			</tr>
+			 <tr>
+                                <td style="text-align:left;display:inline;width:33%"><h3 style="font-weight: normal;display:inline"><b>Log Levels : </b> __LOG_LEVELS </h3></td>
+                        </tr>
 			<tr>
 				<td align="center"> <span stlye="text-align"><b style="color:#CD2A25">__NO_LOGS</b> found in <b style="color:#CD2A25">__NO_FILES</b> files at <b style="color:#CD2A25">__NO_HOSTS</b> hosts</span></td>
 			</tr>
@@ -106,11 +106,11 @@ Content-Type: text/html
 				<h4 style="color:#CD2A25;margin-bottom: 5px;">Top Requested URLs</h1>
 				<table cellpadding="3" cellspacing="2" style="border: thin solid #FFFFFF; font-size: 16px; font-family: 'trebuchet MS';">
 					<tr>
-						<td style="background-color: #1D5E89; color: white; font-weight: bold;max-width:80px;padding:5px">
+						<td style="background-color: #1D5E89; color: white; font-weight: bold;max-width:40px;padding:5px">
 							  Log Type</td>
-						<td style="background-color: #1D5E89; color: white; font-weight: bold;max-width:100px;padding:5px">
+						<td style="background-color: #1D5E89; color: white; font-weight: bold;max-width:40px;padding:5px">
 							  Log Host</td>
-						<td style="background-color: #1D5E89; color: white; font-weight: bold;max-width:150px;padding:5px">
+						<td style="background-color: #1D5E89; color: white; font-weight: bold;max-width:40px;padding:5px">
 							  Log Dir</td>
 						<td style="background-color: #1D5E89; color: white; font-weight: bold;min-width:100px;padding:5px">
 							  Log Details</td>

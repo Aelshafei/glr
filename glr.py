@@ -38,6 +38,7 @@ import commands
 import smtplib
 import getpass
 import socket
+import subprocess
 
 ##################################################
 # Section 01. DEFINIONS 				   	     #
@@ -96,6 +97,16 @@ else:
 	print('\t Tempraroy directory at ' + TEMP_DIR + ' already exists\n')
 
 
+# Check if the data directory exist, otherwise create it
+print(' * checking data directory ....')
+if not os.path.exists('DATA'):
+	print('\t Data directory not found, creating .. ' + )
+	os.makedirs('DATA')
+	print('\t .. ' + bcolors.OKGREEN + 'DONE' + bcolors.ENDC + '\n')
+else:
+	print('\t Data directory at ' + 'DATA' + ' already exists\n')
+
+
 
 # check whether log files to be remotely searched or locally
 print(' * check whether log files to be remotely searched or locally')
@@ -109,9 +120,9 @@ if REMOTE:
 		sshSessions.append( sshSession )
 		result = sshSession.cmd('echo Ok')
 		if 'Ok' in result:
-			print('\t ' + hostname + ' can be accessed successfully')
+			print('\t ' + host['hostname'] + ' can be accessed successfully')
 		else:
-			print('\t' + 'Error accessing ' + hostname )
+			print('\t' + 'Error accessing ' + host['hostname'] )
 			exit(1)
 	print('\n')
 else:
@@ -124,11 +135,18 @@ if REMOTE:
 	for sshSession in sshSessions:
 		#getting the list of files to be copied from the remote log directory
 		#generating the placeholder of time frame in oder to be append in find command
-		host_index = next(index for (index, d) in HOSTS if d["hostname"] == sshSession.ip)
-		for host_log_dir in HOSTS[host_index]['log_folders']
+                host = (item for item in HOSTS if item["hostname"] == sshSession.ip).next()
+		for host_log_dir in host['log_folders']:
 			period_placeholder = calculate_period()
-			logfiles = sshSession.cmd('find ' + host_log_dir.replace(" ", "") + '/*  ' + period_placeholder )
-			logfiles_list = logfiles.split()
+			print("log dir : " + host_log_dir ) 
+			logfiles = sshSession.cmd('find '  +  host_log_dir.replace(" ", "") + ' -type f '   + period_placeholder )
+		        print('find '  + '-type f ' + host_log_dir.replace(" ", "") + period_placeholder )
+			logfiles_list = []
+  			for string in logfiles.split():
+                        	if host_log_dir in string:
+					if '*' not in string:
+						logfiles_list.append(string)
+			print(logfiles_list)
 			print('\t' + str(len(logfiles_list)) + ' log files found in ' + sshSession.ip + '\n')
 			if len(logfiles_list):
 				for logfile in logfiles_list:
@@ -149,7 +167,7 @@ else:
 	period_placeholder = calculate_period()
 	past = time.time() - period_placeholder
 	logfiles = []
-	for directory in HOSTS[local_index]['log_folders']
+	for directory in HOSTS[local_index]['log_folders']:
 		for p, ds, fs in os.walk(directory):
 		    for fn in fs:
 		        filepath = os.path.join(p, fn)
@@ -188,10 +206,10 @@ for log_file in os.listdir(TEMP_DIR):
 				#line_details['time_stamp'] = time.strptime(line_details['time_stamp'][1:-1].split('_')[0], '%d/%b/%Y:%H:%M:%S')
 				line_details.update({'log_line' : line })
 				line_details.update({'log_file': log_file})
-				line_details.update({'log_host'} logfile.split('_')[0])
-				line_details.update({'log_file'} logfile.split('_')[0].replace('_', '/'))
+				line_details.update({'log_host': log_file_path.split('_')[0].split('/')[-1]})
+				line_details.update({'log_file': '/' + '/'.join(log_file_path.split('_')[1:])})
 				#filter odd log line. ex: 84.3.41.146 - - [03/Feb/2016:12:00:14 +0100] "-" 408 - "-" "-" 7
-				if 'ERROR' in 
+				if 'ERROR' in line:
 					logs.append(line_details)
 
 #pprint.pprint( logs[0] )
@@ -208,6 +226,19 @@ print ('\t ' + str(len(logs)) + ' log lines loaded ..\n')
 # Section 04. Processing logs 				     #
 ##################################################
 
+__NO_LOGS = len(logs)
+
+log_hosts = []
+log_files = []
+for log in logs: 
+  	if log['log_host'] not in log_hosts:
+		log_hosts.append(log['log_host'])
+        if log['log_file'] not in log_files:
+		log_files.append(log['log_file'])
+
+__NO_FILES = len(log_files)
+__NO_HOSTS = len(log_hosts)
+print('lgo files no: ' + str(__NO_FILES))
 # No need for further processing - this section was only required for a2lr https://github.com/Aelshafei/a2lr :)
 
 
@@ -229,7 +260,13 @@ if SEND_EMAIL:
 	EMAIL_HTML_TEMPLATE =  EMAIL_HTML_TEMPLATE.replace('__START_DATE', START_DATE.strftime("%Y-%m-%d %H:%M:%S"))
 	EMAIL_HTML_TEMPLATE =  EMAIL_HTML_TEMPLATE.replace('__FROM_EMAIL', getpass.getuser() + '@' +  socket.gethostname())
 	EMAIL_HTML_TEMPLATE =  EMAIL_HTML_TEMPLATE.replace('__TO_EMAILS', ', '.join(TO_EMAILS) )
-	EMAIL_HTML_TEMPLATE =  EMAIL_HTML_TEMPLATE.replace('__SUBJECT', ENVIRONMENT + ' | a2lr ')
+	EMAIL_HTML_TEMPLATE =  EMAIL_HTML_TEMPLATE.replace('__SUBJECT', ENVIRONMENT + ' | glr ')
+	EMAIL_HTML_TEMPLATE =  EMAIL_HTML_TEMPLATE.replace('__NO_FILES', str(__NO_FILES) )
+	EMAIL_HTML_TEMPLATE =  EMAIL_HTML_TEMPLATE.replace('__NO_HOSTS', str(__NO_HOSTS) )
+	EMAIL_HTML_TEMPLATE =  EMAIL_HTML_TEMPLATE.replace('__NO_LOGS', str(__NO_LOGS) )
+	EMAIL_HTML_TEMPLATE =  EMAIL_HTML_TEMPLATE.replace('__LOG_LEVELS', ', '.join(LOG_LEVELS)  )
+	SHELL_CMD_TEMPLATE = SHELL_CMD_TEMPLATE.replace('__TO_EMAILS', ', '.join(TO_EMAILS) )
+        SHELL_CMD_TEMPLATE = SHELL_CMD_TEMPLATE.replace('__SUBJECT', ENVIRONMENT + ' | glr ')
 
 
 
@@ -237,15 +274,14 @@ if SEND_EMAIL:
 print(bcolors.HEADER + 'Logs found :' + bcolors.ENDC)
 for log in logs:
 #for i,v in collections.OrderedDict(sorted(HTTP_STATUS_CODE_OCCUR.items())).items():
-	if v > 0:
-		print( '   ' + log[line] + ' : ' + str(v) )
-		if SEND_EMAIL:
-			__LOG_DATA  += ('<tr>\n'
+	print( '   ' + log['log_line'] )
+	if SEND_EMAIL:
+		__LOG_DATA  += ('<tr>\n'
 										  '<td style="background-color: #A1C6DF; color: black;min-width:50px;padding:5px">\n'
 										   + 'ERROR' + 
 										   ' </td>\n'
 										   '<td style="background-color: #A1C6DF; color: black;min-width:50px;padding:5px">\n'
-										   +  log['host'] + 
+										   +  log['log_host'] + 
 										   ' </td>\n'
 										   '<td style="background-color: #A1C6DF; color: black;min-width:50px;padding:5px">\n'
 										   +  log['log_file'] + 
