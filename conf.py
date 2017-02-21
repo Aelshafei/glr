@@ -11,7 +11,7 @@ REMOTE = True
 #example HOSTS = [ {hostname: 'host1', log_folders: ['folder_path1', 'folder_path2'] }, ]
 HOSTS = [
 	{ hostname: 'localhost',
-	  log_folders: ['/var/SP/weloadm/logs/weblogic/IDMDomain/wls_oam1'
+	  log_folders: ['/path/to/log'
 	  				],
 	},
 	]
@@ -25,7 +25,7 @@ USERNAME='weloadm'
 LOG_LEVELS = ['ERROR']
 
 # Tempraroy directory, where the log files will be copied into and extracted temporary for manipulation before deleting them
-TEMP_DIR = '/home/aelshafei/a2lr_tmp'
+TEMP_DIR = '/home/aelshafei/glr_tmp'
 
 
 # Default period of Reporting in hours (h) or minutes (m) or days(d), Format: 1d or 2h or 30m 

@@ -12,6 +12,20 @@ class bcolors:
     UNDERLINE = '\033[4m'
 
 
+def any_dicts_have_value(iterable, key, value):
+    for element in iterable:
+        if value == element[key]:
+            return iterable.index(element) + 1
+    return False
+
+def contains_loglevel(log):
+	for log_level in conf.LOG_LEVELS:
+		if log_level in log:
+			return conf.LOG_LEVELS.index(log_level) + 1
+	return False
+
+
+
 #function to generate the period placeholder for log files searching command
 def calculate_period():
 	#based on PERIOD constant definition, local and remote command placeholders to be calculated
@@ -92,7 +106,7 @@ EMAIL_HTML_TEMPLATE = '''
                                 <td style="text-align:left;display:inline;width:33%"><h3 style="font-weight: normal;display:inline"><b>Log Levels : </b> __LOG_LEVELS </h3></td>
                         </tr>
 			<tr>
-				<td align="center"> <span stlye="text-align"><b style="color:#CD2A25">__NO_LOGS</b> found in <b style="color:#CD2A25">__NO_FILES</b> files at <b style="color:#CD2A25">__NO_HOSTS</b> hosts</span></td>
+				<td align="center"> <span stlye="text-align"><b style="color:#CD2A25">__NO_LOGS</b>  logs found in <b style="color:#CD2A25">__NO_FILES</b> files at <b style="color:#CD2A25">__NO_HOSTS</b> hosts</span></td>
 			</tr>
 		</table>
 
@@ -103,7 +117,6 @@ EMAIL_HTML_TEMPLATE = '''
 		<table style="width:100%; font-family: 'trebuchet MS';">
 			<tr>
 			<td style="text-align:left;display:inline; float:left" >
-				<h4 style="color:#CD2A25;margin-bottom: 5px;">Top Requested URLs</h1>
 				<table cellpadding="3" cellspacing="2" style="border: thin solid #FFFFFF; font-size: 16px; font-family: 'trebuchet MS';">
 					<tr>
 						<td style="background-color: #1D5E89; color: white; font-weight: bold;max-width:40px;padding:5px">
@@ -112,6 +125,8 @@ EMAIL_HTML_TEMPLATE = '''
 							  Log Host</td>
 						<td style="background-color: #1D5E89; color: white; font-weight: bold;max-width:40px;padding:5px">
 							  Log Dir</td>
+						<td style="background-color: #1D5E89; color: white; font-weight: bold;max-width:40px;padding:5px">
+							  Log Count</td>
 						<td style="background-color: #1D5E89; color: white; font-weight: bold;min-width:100px;padding:5px">
 							  Log Details</td>
 						
@@ -129,3 +144,4 @@ EMAIL_HTML_TEMPLATE = '''
 </html>
 
 '''
+

@@ -100,7 +100,7 @@ else:
 # Check if the data directory exist, otherwise create it
 print(' * checking data directory ....')
 if not os.path.exists('DATA'):
-	print('\t Data directory not found, creating .. ' + )
+	print('\t Data directory not found, creating .. '  )
 	os.makedirs('DATA')
 	print('\t .. ' + bcolors.OKGREEN + 'DONE' + bcolors.ENDC + '\n')
 else:
@@ -199,18 +199,27 @@ for log_file in os.listdir(TEMP_DIR):
 	#print log_file
 	log_file_path = os.path.join(TEMP_DIR, log_file)
 	if os.path.isfile(log_file_path):
+		host_file_logs = []
+		logs.append({'log_host': log_file_path.split('_')[0].split('/')[-1], 'log_file': '/' + '/'.join(log_file_path.split('_')[1:]), 'host_file_logs': host_file_logs })
 		for line in open(log_file_path, 'r').readlines():
 			#print line
-			if len(line) > 0:
-				line_details = {}
-				#line_details['time_stamp'] = time.strptime(line_details['time_stamp'][1:-1].split('_')[0], '%d/%b/%Y:%H:%M:%S')
-				line_details.update({'log_line' : line })
-				line_details.update({'log_file': log_file})
-				line_details.update({'log_host': log_file_path.split('_')[0].split('/')[-1]})
-				line_details.update({'log_file': '/' + '/'.join(log_file_path.split('_')[1:])})
-				#filter odd log line. ex: 84.3.41.146 - - [03/Feb/2016:12:00:14 +0100] "-" 408 - "-" "-" 7
-				if 'ERROR' in line:
-					logs.append(line_details)
+			log_type = contains_loglevel(line)
+			if len(line) > 0 and line[0] != '#' and log_type:
+				line_log = line.split(']', 1)[1]
+				index = any_dicts_have_value(host_file_logs, 'log_line', line_log)
+				if index:
+					host_file_logs[index - 1].update({'count': host_file_logs[index - 1]['count'] + 1})
+				else:
+					#line_details['time_stamp'] = time.strptime(line_details['time_stamp'][1:-1].split('_')[0], '%d/%b/%Y:%H:%M:%S')
+					line_details = {}
+					line_details.update({'log_line' : line_log})
+					line_details.update({'count': 1})
+					#filter odd log line. ex: 84.3.41.146 - - [03/Feb/2016:12:00:14 +0100] "-" 408 - "-" "-" 7
+					log_timestamp_string = line.split(']', 1)[0][1:].split('.')[0]
+					log_timestamp = time.strptime(log_timestamp_string, '%Y-%m-%dT%H:%M:%S')
+					if  datetime.datetime(*log_timestamp[0:6]) > dt_ref:
+						line_details.update({'log_type': LOG_LEVELS[log_type -1]})
+						host_file_logs.append(line_details)
 
 #pprint.pprint( logs[0] )
 
@@ -226,15 +235,17 @@ print ('\t ' + str(len(logs)) + ' log lines loaded ..\n')
 # Section 04. Processing logs 				     #
 ##################################################
 
-__NO_LOGS = len(logs)
-
+__NO_LOGS = 0
 log_hosts = []
 log_files = []
+print(logs)
 for log in logs: 
-  	if log['log_host'] not in log_hosts:
-		log_hosts.append(log['log_host'])
-        if log['log_file'] not in log_files:
-		log_files.append(log['log_file'])
+	for host_file_log in log['host_file_logs']:
+		__NO_LOGS += host_file_log['count']
+  		if log['log_host'] not in log_hosts:
+			log_hosts.append(log['log_host'])
+       		if log['log_file'] not in log_files:
+			log_files.append(log['log_file'])
 
 __NO_FILES = len(log_files)
 __NO_HOSTS = len(log_hosts)
@@ -273,23 +284,27 @@ if SEND_EMAIL:
 #printing http status
 print(bcolors.HEADER + 'Logs found :' + bcolors.ENDC)
 for log in logs:
-#for i,v in collections.OrderedDict(sorted(HTTP_STATUS_CODE_OCCUR.items())).items():
-	print( '   ' + log['log_line'] )
-	if SEND_EMAIL:
-		__LOG_DATA  += ('<tr>\n'
-										  '<td style="background-color: #A1C6DF; color: black;min-width:50px;padding:5px">\n'
-										   + 'ERROR' + 
-										   ' </td>\n'
-										   '<td style="background-color: #A1C6DF; color: black;min-width:50px;padding:5px">\n'
-										   +  log['log_host'] + 
-										   ' </td>\n'
-										   '<td style="background-color: #A1C6DF; color: black;min-width:50px;padding:5px">\n'
-										   +  log['log_file'] + 
-										   ' </td>\n'
-										   '<td style="background-color: #A1C6DF; color: black;min-width:50px;padding:5px">\n'
-										   +  log['log_line'] + 
-										   ' </td>\n'
-										)
+	print('* Printing logs in file: ' + log['log_file'] + ' at host: ' + log['log_host'])
+	for host_file_log in log['host_file_logs']:
+		print( '   ' + str(host_file_log['count']) + host_file_log['log_line'] )
+		if SEND_EMAIL:
+			__LOG_DATA  += ('<tr>\n'
+											  '<td style="background-color: #A1C6DF; color: black;min-width:50px;padding:5px">\n'
+											   + host_file_log['log_type'] + 
+											   ' </td>\n'
+											   '<td style="background-color: #A1C6DF; color: black;min-width:50px;padding:5px">\n'
+											   +  log['log_host'] + 
+											   ' </td>\n'
+											   '<td style="background-color: #A1C6DF; color: black;min-width:50px;padding:5px">\n'
+											   +  log['log_file'] + 
+											   ' </td>\n'
+											   '<td style="background-color: #A1C6DF; color: black;min-width:50px;padding:5px">\n'
+											   + str(host_file_log['count']) + 
+											   ' </td>\n'
+											   '<td style="background-color: #A1C6DF; color: black;min-width:50px;padding:5px">\n'
+											   +  host_file_log['log_line'] + 
+											   ' </td>\n'
+											)
 
 
 print('\n')
@@ -327,5 +342,6 @@ for file in os.listdir(TEMP_DIR):
         #elif os.path.isdir(file_path): shutil.rmtree(file_path)
     except Exception , e:
         print(e)
+
 
 
